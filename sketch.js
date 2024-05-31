@@ -2,36 +2,28 @@ let capture;
 let posenet;
 let capturedPhoto;
 let analyzing = false;
-let poses = []; // Store detected poses
+let poses = [];
+let useBackCamera = true;
 
 function setup() {
     let canvas = createCanvas(800, 500);
-    canvas.parent('canvasContainer'); // Attach canvas to a div
+    canvas.parent('canvasContainer');
+    startCapture();
 
-    // Create video capture
-    capture = createCapture(VIDEO);
-    capture.size(800, 500);
-    capture.hide();
-
-    // Initialize PoseNet
     posenet = ml5.poseNet(modelLoaded);
-    posenet.on('pose', receivedPoses);
+    posenet.on('pose', (results) => poses = results);
 
-    // Add event listener to the capture button
     let captureButton = document.getElementById('captureButton');
     captureButton.addEventListener('click', capturePhoto);
 
-    // Add event listener to the analyze button
     let analyzeButton = document.getElementById('analyzeButton');
     analyzeButton.addEventListener('click', analyzePhoto);
 
-    // Add event listener to the refresh button
     let refreshButton = document.getElementById('refreshButton');
     refreshButton.addEventListener('click', resetCapture);
-}
 
-function receivedPoses(results) {
-    poses = results; // Store detected poses
+    let toggleCameraButton = document.getElementById('toggleCameraButton');
+    toggleCameraButton.addEventListener('click', toggleCamera);
 }
 
 function modelLoaded() {
@@ -40,50 +32,57 @@ function modelLoaded() {
 
 function draw() {
     if (capturedPhoto) {
-        image(capturedPhoto, 0, 0, 800, 500); // Draw the captured photo
-        // Display keypoints and skeleton on the captured photo
-        for (let i = 0; i < poses.length; i++) {
-            let pose = poses[i].pose;
-            let skeleton = poses[i].skeleton;
-            // Draw keypoints
-            for (let j = 0; j < pose.keypoints.length; j++) {
+        image(capturedPhoto, 0, 0, 800, 500);
+        drawKeypoints();
+        drawSkeleton();
+    } else {
+        image(capture, 0, 0, 800, 500);
+    }
+}
+
+function drawKeypoints() {
+    for (let i = 0; i < poses.length; i++) {
+        let pose = poses[i].pose;
+        for (let j = 0; j < pose.keypoints.length; j++) {
+            let keypoint = pose.keypoints[j];
+            if (keypoint.score > 0.2) {
                 fill(255, 0, 0);
                 noStroke();
-                ellipse(pose.keypoints[j].position.x, pose.keypoints[j].position.y, 10);
-            }
-            // Draw skeleton
-            stroke(255, 255, 255);
-            strokeWeight(2);
-            for (let j = 0; j < skeleton.length; j++) {
-                let partA = skeleton[j][0];
-                let partB = skeleton[j][1];
-                line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
+                ellipse(keypoint.position.x, keypoint.position.y, 10);
             }
         }
-    } else {
-        image(capture, 0, 0, 800, 500); // Draw the video capture
+    }
+}
+
+function drawSkeleton() {
+    for (let i = 0; i < poses.length; i++) {
+        let skeleton = poses[i].skeleton;
+        for (let j = 0; j < skeleton.length; j++) {
+            let partA = skeleton[j][0];
+            let partB = skeleton[j][1];
+            stroke(255, 255, 255);
+            strokeWeight(2);
+            line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
+        }
     }
 }
 
 function capturePhoto() {
-    // Capture the current frame and assign it to capturedPhoto
     capturedPhoto = capture.get();
-    
-    // Stop live video feed
     capture.stop();
-    
-    // Show the analyze button
     document.getElementById('analyzeButton').style.display = 'inline';
 }
 
 function analyzePhoto() {
     analyzing = true;
     if (capturedPhoto) {
-        // Analyze the captured photo with PoseNet
         posenet.singlePose(capturedPhoto, function (err, result) {
             if (!err) {
                 console.log('PoseNet analysis result:', result);
                 receivedPoses([result]);
+                let poseName = classifyPose(result.pose.keypoints);
+                document.getElementById('poseName').innerText = poseName;
+                provideFeedback(result.pose, idealPose);
             } else {
                 console.error('Error analyzing photo:', err);
             }
@@ -94,15 +93,54 @@ function analyzePhoto() {
 }
 
 function resetCapture() {
-    // Start the video capture again
-    capture = createCapture(VIDEO);
-    capture.size(800, 500);
-    capture.hide();
-    
-    // Clear the captured photo and poses
+    startCapture();
     capturedPhoto = null;
     poses = [];
-    
-    // Hide the analyze button
     document.getElementById('analyzeButton').style.display = 'none';
+    document.getElementById('feedback').innerHTML = '';
+    document.getElementById('poseName').innerText = '';
+}
+
+function startCapture() {
+    if (capture) {
+        capture.remove();
+    }
+    const constraints = {
+        video: {
+            facingMode: useBackCamera ? { exact: "environment" } : "user" // Use back or front camera
+        }
+    };
+    capture = createCapture(constraints);
+    capture.size(800, 500);
+    capture.hide();
+}
+
+function toggleCamera() {
+    useBackCamera = !useBackCamera;
+    resetCapture();
+}
+
+function provideFeedback(userPose, idealPose) {
+    let feedback = '';
+    for (let i = 0; i < userPose.keypoints.length; i++) {
+        let userPoint = userPose.keypoints[i].position;
+        let idealPoint = idealPose.keypoints[i].position;
+        let distance = dist(userPoint.x, userPoint.y, idealPoint.x, idealPoint.y);
+        if (distance > threshold) {
+            fill(255, 0, 0);
+            noStroke();
+            ellipse(userPoint.x, userPoint.y, 10);
+            feedback += `Adjust your ${userPose.keypoints[i].part}<br>`;
+        }
+    }
+    document.getElementById('feedback').innerHTML = feedback;
+}
+
+function classifyPose(keypoints) {
+    // Placeholder logic to classify pose based on keypoints
+    return "Tadasana"; // Example pose name
+}
+
+function receivedPoses(results) {
+    poses = results;
 }
