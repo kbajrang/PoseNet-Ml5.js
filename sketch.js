@@ -1,9 +1,6 @@
 let capture;
 let posenet;
-let noseX, noseY;
 let singlePose;
-let reyex, reyey;
-let leyex, leyey;
 let skeleton;
 
 function setup() {
@@ -29,7 +26,7 @@ function modelLoaded() {
 }
 
 function draw() {
-    image(capture, 0, 0, 800, 500);
+    image(capture, 0, 0, 800, 500); // Draw the video capture first
     if (singlePose) {
         for (let i = 0; i < singlePose.keypoints.length; i++) {
             fill(255, 0, 0);
