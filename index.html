@@ -4,12 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PoseNet with ml5.js</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ml5@0.6.0/dist/ml5.min.js"></script>
 </head>
 <body>
-    <div id="canvasContainer"></div>
+    <div id="container">
+        <div id="canvasContainer"></div>
+        <div id="controls">
+            <button id="captureButton">Capture Photo</button>
+            <button id="analyzeButton" style="display:none;">Analyze Photo</button>
+            <button id="refreshButton" title="Refresh">&#x21bb;</button>
+        </div>
+    </div>
     <script src="sketch.js"></script>
 </body>
 </html>
