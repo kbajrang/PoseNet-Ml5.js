@@ -7,7 +7,8 @@ let leyex, leyey;
 let skeleton;
 
 function setup() {
-    createCanvas(800, 500);
+    let canvas = createCanvas(800, 500);
+    canvas.parent('canvasContainer'); // Ensure the canvas is attached to the correct parent element
     capture = createCapture(VIDEO);
     capture.size(800, 500);
     capture.hide();
@@ -49,7 +50,9 @@ function draw() {
 
     stroke(255, 255, 255);
     strokeWeight(5);
-    for (let j = 0; j < skeleton.length; j++) {
-        line(skeleton[j][0].position.x, skeleton[j][0].position.y, skeleton[j][1].position.x, skeleton[j][1].position.y);
+    if (skeleton) {
+        for (let j = 0; j < skeleton.length; j++) {
+            line(skeleton[j][0].position.x, skeleton[j][0].position.y, skeleton[j][1].position.x, skeleton[j][1].position.y);
+        }
     }
 }
